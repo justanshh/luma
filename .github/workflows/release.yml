@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:45
     timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
     env:
       PUB_CACHE: /run/media/justansh/DRIVER/flutter-pub-cache
       CARGO_TERM_COLOR: always
@@ -76,6 +79,7 @@ jobs:
           mkdir -p /opt/flutter
           tar -xJf "/tmp/${archive}" -C /opt/flutter --strip-components=1
           rm -f "/tmp/${archive}"
+          git config --global --add safe.directory /opt/flutter
           echo "/opt/flutter/bin" >> "$GITHUB_PATH"
           /opt/flutter/bin/flutter config --no-analytics
 
