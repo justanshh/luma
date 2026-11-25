@@ -19,6 +19,7 @@ class OrgMprisMediaPlayer2 extends DBusObject {
   final _volumeStreamController = StreamController<double>();
   Stream<double> get volumeStream => _volumeStreamController.stream;
 
+  double _volume = 1.0;
   var position = const Duration(seconds: 0);
 
   /// Creates a new object to expose on [path].
@@ -151,13 +152,12 @@ class OrgMprisMediaPlayer2 extends DBusObject {
 
   /// Gets value of property org.mpris.MediaPlayer2.Player.Volume
   DBusDouble getVolume() {
-    log('Get org.mpris.MediaPlayer2.Player.Volume not implemented',
-        name: 'audio_service_mpris');
-    return const DBusDouble(1.0);
+    return DBusDouble(_volume);
   }
 
   /// Sets property org.mpris.MediaPlayer2.Player.Volume
   Future<DBusMethodResponse> setVolume(double value) async {
+    _volume = value;
     _volumeStreamController.add(value);
     return DBusMethodSuccessResponse([]);
   }

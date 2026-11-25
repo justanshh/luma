@@ -146,7 +146,10 @@ class UpdateService {
       return true;
     } catch (error) {
       _lastError = error.toString();
-      await _cleanupDownloadedFile(path);
+      if (target == null ||
+          File(path).absolute.path != File(target).absolute.path) {
+        await _cleanupDownloadedFile(path);
+      }
       return false;
     }
   }

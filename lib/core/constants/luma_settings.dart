@@ -46,25 +46,6 @@ enum LumaEqualizerPreset {
       orElse: () => LumaEqualizerPreset.auto,
     );
   }
-
-  /// Gains for the ten bands exposed by the player engine.
-  List<double> get gains => switch (this) {
-        LumaEqualizerPreset.auto || LumaEqualizerPreset.balanced => const [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-        LumaEqualizerPreset.bass => const [6, 5, 3, 1, 0, 0, -1, -1, -2, -2],
-        LumaEqualizerPreset.vocal => const [-2, -1, 0, 2, 4, 5, 4, 2, 0, -1],
-        LumaEqualizerPreset.clear => const [2, 1, 0, -1, -2, -1, 1, 3, 4, 4],
-      };
 }
 
 class LumaSettingsKeys {

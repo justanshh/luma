@@ -16,7 +16,7 @@ class DiscordService {
 
   /// Bloomee's Discord application, reused so existing artwork assets and
   /// application setup continue to work.
-  static const clientId = '1512528534667661443';
+  static const clientId = '1575120361362694307';
   static const enabledSettingKey = 'discord.enabled';
 
   static const _progressRefreshInterval = Duration(seconds: 10);

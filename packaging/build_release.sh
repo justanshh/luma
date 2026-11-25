@@ -22,6 +22,7 @@ flutter build linux --release
 rm -rf "$APP_DIR" "$RPM_TOP"
 mkdir -p "$APP_DIR"
 cp -a build/linux/x64/release/bundle/. "$APP_DIR/"
+cp LICENSE "$APP_DIR/LICENSE"
 mkdir -p "$APP_DIR/usr/lib"
 cp -a "$HOME/.local/lib64/fermata"/libmpv.so.2* "$APP_DIR/usr/lib/"
 ln -sfn fermata "$APP_DIR/luma"
@@ -50,9 +51,9 @@ cp -a "$APP_DIR/lib/." build/linux/x64/release/bundle/lib/
 "$TOOLS/appimagetool" "$APP_DIR" "$DIST/Luma-${VERSION}-x86_64.AppImage"
 
 mkdir -p "$RPM_TOP/SOURCES" "$RPM_TOP/SPECS" "$RPM_TOP/BUILD" "$RPM_TOP/BUILDROOT" "$RPM_TOP/RPMS" "$RPM_TOP/SRPMS"
-tar --exclude=build --exclude=.dart_tool --exclude=dist --exclude=packaging/AppDir --exclude=packaging/rpmbuild --exclude='*.AppImage' --transform='s,^\.,fermata-0.1.0,' -czf "$DIST/fermata-${VERSION}-source.tar.gz" .
+tar --exclude=.git --exclude=build --exclude=.dart_tool --exclude=dist --exclude=packaging/AppDir --exclude=packaging/rpmbuild --exclude='*.AppImage' --transform='s,^\.,fermata-0.1.0,' -czf "$DIST/fermata-${VERSION}-source.tar.gz" .
 ln -sfn "$APP_DIR" packaging/AppDir
-tar --exclude=build --exclude=.dart_tool --exclude=dist --exclude=packaging/rpmbuild --exclude='*.AppImage' --transform='s,^\.,fermata-0.1.0,' -czf "$RPM_TOP/SOURCES/fermata-${VERSION}.tar.gz" .
+tar --exclude=.git --exclude=build --exclude=.dart_tool --exclude=dist --exclude=packaging/rpmbuild --exclude='*.AppImage' --transform='s,^\.,fermata-0.1.0,' -czf "$RPM_TOP/SOURCES/fermata-${VERSION}.tar.gz" .
 rm packaging/AppDir
 rpmbuild -bb packaging/fermata.spec --define "_topdir $RPM_TOP" --define "__rpmuncompress /run/media/justansh/DRIVER/fermata-build-tools/usr/bin/rpmuncompress"
 cp "$RPM_TOP/RPMS/x86_64/fermata-${VERSION}-1.fc45.x86_64.rpm" "$DIST/"

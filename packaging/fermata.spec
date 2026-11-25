@@ -26,12 +26,13 @@ Luma is a desktop music player for local files and .bex content plugins.
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}%{_bindir} %{buildroot}%{_libdir}/fermata %{buildroot}%{_datadir}/applications %{buildroot}%{_datadir}/icons/hicolor/256x256/apps
+mkdir -p %{buildroot}%{_bindir} %{buildroot}%{_libdir}/fermata %{buildroot}%{_datadir}/applications %{buildroot}%{_datadir}/icons/hicolor/256x256/apps %{buildroot}%{_datadir}/licenses/fermata
 cp -a packaging/AppDir/. %{buildroot}%{_libdir}/fermata/
 install -m 0755 packaging/fermata-launcher.sh %{buildroot}%{_bindir}/luma
 ln -s luma %{buildroot}%{_bindir}/fermata
 install -m 0644 packaging/fermata.desktop %{buildroot}%{_datadir}/applications/fermata.desktop
 install -m 0644 packaging/icons/luma.png %{buildroot}%{_datadir}/icons/hicolor/256x256/apps/luma.png
+install -m 0644 LICENSE %{buildroot}%{_datadir}/licenses/fermata/LICENSE
 
 %post
 update-desktop-database %{_datadir}/applications || :
@@ -47,6 +48,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor || :
 %{_libdir}/fermata
 %{_datadir}/applications/fermata.desktop
 %{_datadir}/icons/hicolor/256x256/apps/luma.png
+%{_datadir}/licenses/fermata/LICENSE
 
 %changelog
 * Tue Nov 24 2026 Fermata contributors <noreply@example.invalid> - 0.1.0-1

@@ -166,7 +166,7 @@ jobs:
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          name: Fermata ${{ github.ref_name }}
+          name: Luma ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true

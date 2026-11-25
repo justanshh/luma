@@ -22,6 +22,7 @@ class TrackPrefixIndex extends TrackSearchIndex {
   final RegExp _whitespace = RegExp(r'\s+');
 
   StreamSubscription<void>? _watcher;
+  Future<void>? _refreshing;
   Map<String, Track> _tracksById = const {};
   Map<String, List<String>> _prefixIndex = const {};
   Object? _watchError;
@@ -57,7 +58,15 @@ class TrackPrefixIndex extends TrackSearchIndex {
     if (!_disposed) await _refresh();
   }
 
-  Future<void> _refresh() async {
+  Future<void> _refresh() {
+    final future = _refreshImpl();
+    _refreshing = future;
+    return future.whenComplete(() {
+      if (identical(_refreshing, future)) _refreshing = null;
+    });
+  }
+
+  Future<void> _refreshImpl() async {
     final revision = ++_revision;
     _invalidate();
     try {
@@ -136,6 +145,9 @@ class TrackPrefixIndex extends TrackSearchIndex {
   @override
   Future<List<Track>> search(String query, {int limit = 50}) async {
     await initialize();
+    while (_refreshing != null) {
+      await _refreshing;
+    }
     final normalized = _normalize(query);
     if (normalized.isEmpty || limit <= 0) return const [];
 

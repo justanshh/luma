@@ -31,7 +31,6 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   static const _closeToTraySetting = 'desktop.close_to_tray';
 
-  late final Future<bool?> _closeToTrayPreference;
   DesktopTrayService? _tray;
   bool _handlingClose = false;
   bool _checkingForUpdates = false;
@@ -44,12 +43,7 @@ class _ShellScreenState extends State<ShellScreen> {
     });
     if (Platform.isLinux) {
       _tray = ServiceLocator.tray;
-      _closeToTrayPreference =
-          ServiceLocator.settingsDao?.getSettingBool(_closeToTraySetting) ??
-              Future<bool?>.value();
       _tray?.closeRequestedHandler = _handleCloseRequested;
-    } else {
-      _closeToTrayPreference = Future<bool?>.value();
     }
   }
 
@@ -63,7 +57,8 @@ class _ShellScreenState extends State<ShellScreen> {
     if (_handlingClose) return;
     _handlingClose = true;
     try {
-      final closeToTray = await _closeToTrayPreference;
+      final closeToTray =
+          await ServiceLocator.settingsDao?.getSettingBool(_closeToTraySetting);
       if (!mounted) return;
       if (closeToTray == true) {
         await _tray?.hideWindow();
