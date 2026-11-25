@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Luma
+GenericName=Music Player
+Comment=Local and plugin-powered desktop music player
+Exec=luma %U
+Icon=luma
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+MimeType=audio/flac;audio/mpeg;audio/ogg;audio/mp4;audio/x-wav;
+StartupWMClass=io.github.hungerg.fermata
+X-GNOME-UsesNotifications=true
+X-MPRIS-Identity=Luma
+X-MPRIS-ModuleName=Luma

@@ -1,0 +1,176 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    # packaging/build_release.sh and packaging/fermata.spec target Fedora 45.
+    runs-on: ubuntu-latest
+    container: fedora:45
+    timeout-minutes: 180
+    env:
+      PUB_CACHE: /run/media/justansh/DRIVER/flutter-pub-cache
+      CARGO_TERM_COLOR: always
+
+    steps:
+      - name: Install Fedora build dependencies
+        run: |
+          dnf -y install \
+            ca-certificates \
+            clang \
+            cmake \
+            curl \
+            desktop-file-utils \
+            findutils \
+            gcc-c++ \
+            git \
+            glib2-devel \
+            gtk3-devel \
+            libadwaita-devel \
+            libX11-devel \
+            libXi-devel \
+            libXcursor-devel \
+            libXinerama-devel \
+            libXrandr-devel \
+            libxkbcommon-devel \
+            libzstd-devel \
+            mesa-libEGL-devel \
+            mesa-libGL-devel \
+            mpv-libs \
+            ninja-build \
+            openssl-devel \
+            patchelf \
+            pkgconf-pkg-config \
+            rpm-build \
+            rustup \
+            squashfs-tools \
+            tar \
+            unzip \
+            wayland-devel \
+            which \
+            xz \
+            zstd \
+            zsync
+          dnf clean all
+
+      - uses: actions/checkout@v4
+
+      - name: Install Flutter
+        run: |
+          flutter_version="3.50.1"
+          archive="flutter_linux_${flutter_version}-stable.tar.xz"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/${archive}" \
+            --output "/tmp/${archive}"
+          mkdir -p /opt/flutter
+          tar -xJf "/tmp/${archive}" -C /opt/flutter --strip-components=1
+          rm -f "/tmp/${archive}"
+          echo "/opt/flutter/bin" >> "$GITHUB_PATH"
+          /opt/flutter/bin/flutter config --no-analytics
+
+      - name: Install Rust
+        run: |
+          rustup default stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustc" --version
+          "$HOME/.cargo/bin/cargo" --version
+
+      - name: Resolve dependencies and analyze
+        run: |
+          flutter pub get
+          flutter analyze
+
+      - name: Provision packaging tools
+        run: |
+          tools="/run/media/justansh/DRIVER/fermata-packaging-tools"
+          build_tools="/run/media/justansh/DRIVER/fermata-build-tools"
+          mpv_dir="$HOME/.local/lib64/fermata"
+          install -d "$tools" "$build_tools/usr/bin" "$mpv_dir"
+
+          curl --fail --location --retry 3 \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
+            --output "$tools/linuxdeploy"
+          curl --fail --location --retry 3 \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
+            --output "$tools/appimagetool"
+          chmod +x "$tools/linuxdeploy" "$tools/appimagetool"
+
+          ln -sf "$(command -v patchelf)" "$build_tools/usr/bin/patchelf"
+          if command -v rpmuncompress > /dev/null; then
+            ln -sf "$(command -v rpmuncompress)" "$build_tools/usr/bin/rpmuncompress"
+          else
+            cat > "$build_tools/usr/bin/rpmuncompress" <<'EOF'
+          #!/bin/sh
+          if [ "$#" -gt 0 ]; then
+            exec gzip -dc "$1"
+          fi
+          exec gzip -dc
+          EOF
+            chmod +x "$build_tools/usr/bin/rpmuncompress"
+          fi
+          mpv_library="$(find /usr/lib64 -maxdepth 1 -name 'libmpv.so.2*' -type f -print -quit)"
+          test -n "$mpv_library"
+          cp -aL "$mpv_library" "$mpv_dir/libmpv.so.2"
+
+          version="$(awk '$1 == "version:" { split($2, v, "+"); print v[1]; exit }' pubspec.yaml)"
+          test -n "$version"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v${version}" ]]; then
+            echo "Release tag $GITHUB_REF_NAME does not match pubspec version $version" >&2
+            exit 1
+          fi
+
+      - name: Build Linux release
+        run: ./packaging/build_release.sh
+
+      - name: Verify and archive release sources
+        run: |
+          version="$(awk '$1 == "version:" { split($2, v, "+"); print v[1]; exit }' pubspec.yaml)"
+          test -n "$version"
+          shopt -s nullglob
+          appimages=(dist/*.AppImage)
+          rpms=(dist/*.rpm)
+          test "${#appimages[@]}" -eq 1
+          test -s "${appimages[0]}"
+          test "${#rpms[@]}" -eq 1
+          test -s "${rpms[0]}"
+          git archive \
+            --format=tar.gz \
+            --prefix="fermata-${version}/" \
+            --output="dist/fermata-${version}-source.tar.gz" \
+            HEAD
+          tar -tzf "dist/fermata-${version}-source.tar.gz" > /dev/null
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-linux-release
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            dist/*.AppImage
+            dist/*.rpm
+            dist/*-source.tar.gz
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Fermata ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.AppImage
+            dist/*.rpm
+            dist/*-source.tar.gz
