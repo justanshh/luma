@@ -68,6 +68,9 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Trust workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Install Flutter
         run: |
           flutter_version="3.50.1"
